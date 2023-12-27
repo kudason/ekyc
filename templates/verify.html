@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xác thực khuôn mặt</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/style.css">
+</head>
+
+<body>
+  <div class="container mt-5">
+    <!-- Progress bar -->
+    <div class="progress mb-3">
+      <div class="progress-bar" role="progressbar" style="width: 66%;" aria-valuenow="66" aria-valuemin="0"
+        aria-valuemax="100">66%</div>
+    </div>
+    <h3 class="mb-4 text-center">Xác thực khuôn mặt</h3>
+    <!-- label -->
+    <div class="row">
+      <div class="col-md-4 offset-md-4 text-center">
+        <label for="guide" class="form-label" id="guide">Bấm nút "Start Video" để bắt đầu quá trình xác thực</label>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-8 camera-wrapper">
+        <video id="video"></video>
+      </div>
+      <div class="col-md-4 canvas-wrapper">
+        <canvas id="canvas1" class="mb-2"></canvas>
+        <canvas id="canvas2" class="mb-2"></canvas>
+        <canvas id="canvas3" class="mb-2"></canvas>
+      </div>
+    </div>
+    <div class="row mt-4">
+      <div class="col-md-4 offset-md-4 text-center align-items-center">
+        <button id="snap" class="btn btn-primary">Chụp ảnh</button>
+        <button id="startStop" class="btn btn-primary">Start/Stop Camera</button>
+        <button id="verify" type="button" class="btn btn-primary" style="right: -1px;">verify</button>
+        <div class="spinner-border text-primary" role="status" style="display: none;">
+          <span class="sr-only">Loading...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.7.0/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script>
+    const guide = document.getElementById('guide');
+    const video = document.getElementById('video');
+    const canvas1 = document.getElementById('canvas1');
+    const canvas2 = document.getElementById('canvas2');
+    const canvas3 = document.getElementById('canvas3');
+    const snap = document.getElementById('snap');
+    const startStop = document.getElementById('startStop');
+    const context1 = canvas1.getContext('2d');
+    const context2 = canvas2.getContext('2d');
+    const context3 = canvas3.getContext('2d');
+    let snapIndex = 0;
+    let streamActive = false;
+
+    snap.addEventListener('click', function () {
+
+      if (streamActive == false) {
+        guide.style.color = 'red';
+        guide.textContent = 'Bạn phải bật camera trước khi chụp ảnh';
+        return;
+      }
+
+      let canvas = [canvas1, canvas2, canvas3][snapIndex];
+      let context = canvas.getContext('2d');
+      let scale = Math.min(canvas.width / video.videoWidth, canvas.height / video.videoHeight);
+      let x = (canvas.width / 2) - (video.videoWidth / 2) * scale;
+      let y = (canvas.height / 2) - (video.videoHeight / 2) * scale;
+      context.drawImage(video, x, y, video.videoWidth * scale, video.videoHeight * scale);
+      snapIndex = (snapIndex + 1) % 3;
+      if (snapIndex == 1) {
+        guide.style.color = 'green';
+        guide.textContent = 'Hãy nhìn sang trái và bấm nút "Chụp ảnh" để chụp ảnh';
+      } else if (snapIndex == 2) {
+        guide.style.color = 'blue';
+        guide.textContent = 'Hãy nhìn sang phải và bấm nút "Chụp ảnh" để chụp ảnh';
+      } else {
+        guide.style.color = 'green';
+        guide.textContent = 'Bấm nút "verify" để xác thực';
+      }
+
+    });
+
+    startStop.addEventListener('click', function () {
+      if (streamActive) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+        startStop.textContent = 'Start Video';
+        streamActive = false;
+        guide.textContent = 'Bấm nút "Start Video" để bắt đầu quá trình xác thực';
+      } else {
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then(function (stream) {
+            video.srcObject = stream;
+            video.play();
+            startStop.textContent = 'Stop Video';
+            streamActive = true;
+            guide.textContent = 'Nhìn thẳng vào camera và bấm nút "Chụp ảnh" để chụp ảnh';
+          })
+          .catch(function (err) {
+            console.log("An error occurred: " + err);
+          });
+      }
+    });
+
+
+    //   verify
+
+    var veri = document.getElementById('verify');
+
+    veri.addEventListener('click', function () {
+
+      // check if 3 images are taken
+      if (snapIndex != 0 && context1.getImageData(0, 0, canvas1.width, canvas1.height).data[0] == 0) {
+        guide.style.color = 'red';
+        guide.textContent = 'Bạn phải chụp đủ 3 ảnh';
+        return;
+      }
+
+      // show loading
+      document.getElementsByClassName('spinner-border')[0].style.display = 'inline-block';
+      document.getElementById('verify').style.display = 'none';
+
+
+      let img1 = canvas1.toDataURL('image/png');
+      let img2 = canvas2.toDataURL('image/png');
+      let img3 = canvas3.toDataURL('image/png');
+      fetch('/face_verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          images: [img1, img2, img3]
+        })
+      })
+        .then(response => response.json())
+        .then(data => {
+          console.log(data);
+          if (data.result) {
+            alert('Xác thực thành công');
+            var progress = document.getElementsByClassName('progress-bar')[0];
+            progress.style.width = '100%';
+            progress.textContent = '100%';
+            document.getElementsByClassName('spinner-border')[0].style.display = 'none';
+            document.getElementById('verify').style.display = 'inline-block';
+            window.location.href = "/";
+          } else {
+            alert('Xác thực thất bại');
+            window.location.reload();
+          }
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+        });
+
+
+    });
+
+  </script>
+</body>
+
+<footer class="page-footer font-small blue pt-4">
+  <div class="container-fluid text-center text-md-left">
+    <div class="row">
+      <div class="col-md-6 mt-md-0 mt-3 text-center">
+        <h5 class="">eKYC Demo</h5>
+        <p>© 2023 eKYC Demo.</p>
+      </div>
+      <hr class="clearfix w-100 d-md-none pb-3">
+      <div class="col-md-6 mb-md-0 mb-3 text-center">
+        <h5 class="text-uppercase">Thông tin liên hệ</h5>
+        <p>Admin</p>
+        <p>
+          <img src="https://img.icons8.com/fluent/48/000000/facebook-new.png" />
+          </a>
+          <img src="https://img.icons8.com/fluent/48/000000/instagram-new.png" />
+          </a>
+
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</html>

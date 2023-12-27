@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eKYC Demo</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/styles.css">
+</head>
+
+<body>
+    <div class="container mt-5">
+        <!-- Progress bar -->
+        <div class="progress mb-3">
+            <div class="progress-bar" role="progressbar" style="width: 1%;" aria-valuenow="33" aria-valuemin="0"
+                aria-valuemax="100">0%</div>
+        </div>
+        <form action="/verify" method="post" enctype="multipart/form-data">
+            <div class="row">
+                <!-- Upload ID Card Section -->
+                <div class="col-md-6">
+                    <div class="upload-section">
+                        <h5>Upload ID Card</h5>
+                        <div class="custom-file mb-3">
+                            <input type="file" class="custom-file-input" id="uploadID" name="file" required>
+                            <label class="custom-file-label" for="uploadID" style="text-align: center; " > Chọn ảnh CCCD của bạn(mặt trước)</label>
+                            <img id="image" name="image"
+                                style="display: none; margin-top: 10px; max-width: 100%; border-radius: 20px; max-height: fit-content;" />
+                            </div>
+                    </div>
+                </div>
+                <!-- Display Information Section -->
+                <div class="col-md-6">
+                    <div class="info-section">
+                        <h5>Information</h5>
+                        <div class="form-group">
+                            <label for="idNumber">Số/No</label>
+                            <input type="text" class="form-control info-input" id="idNumber" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="fullName">Họ và Tên/Fullname</label>
+                            <input type="text" class="form-control info-input" id="fullName" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="birthday">Ngày sinh/Date of birth</label>
+                            <input type="text" class="form-control info-input" id="birthday" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="sex">Giới tính/Sex</label>
+                            <input type="text" class="form-control info-input" id="sex" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="nation">Quốc tịch/Nationlity</label>
+                            <input type="text" class="form-control info-input" id="nation" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="address">Quê quán/Place of origin</label>
+                            <input type="text" class="form-control info-input" id="address1" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="address">Nơi thường trú/Place of residence </label>
+                            <input type="text" class="form-control info-input" id="address2" readonly>
+                        </div>
+                        <!-- submit button -->
+                        <div class="form-group">
+                            <!-- <button id = "submit" name="'submit" type="submit" class="btn btn-primary">Submit</button>
+                             -->
+                            <input id="submit" name="submit" type="button" class="btn btn-primary" value="Submit">
+                            <div class="spinner-border text-primary" role="status" style="display: none;">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <!-- xac nhan thong tin  -->
+                            <button id="xacnhan" name="xacnhan" type="submit" class="btn btn-primary" style="display: none;">Xác nhận thông tin</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <script>
+            // display information after submit form and change progress bar to 66%, information get flasksever return jsonify
+
+            document.getElementById('submit').addEventListener('click', function () {
+                //  check if image is uploaded
+                if (document.getElementById('image').src == '') {
+                    alert('Bạn chưa upload ảnh');
+                    return;
+                }
+                // hide submit button and show spinner
+                document.getElementById('submit').style.display = 'none';
+
+                document.getElementsByClassName('spinner-border')[0].style.display = 'block';
+
+                fetch('/', {
+                    method: 'POST',
+                    body: new FormData(document.getElementById('uploadID').form)
+                })
+                    .then(response => response.json())
+                    .then(
+                        data => {
+
+                            document.getElementById('idNumber').value = data['id'];
+                            document.getElementById('fullName').value = data['name'];
+                            document.getElementById('birthday').value = data['birth'];
+                            document.getElementById('sex').value = data['sex'];
+                            document.getElementById('nation').value = data['nation'];
+                            document.getElementById('address1').value = data['address1'];
+                            document.getElementById('address2').value = data['address2'];
+                            document.getElementsByClassName('progress-bar')[0].style.width = '33%';
+                            document.getElementsByClassName('progress-bar')[0].innerHTML = '33%';
+                            // show submit button and hide spinner
+                            document.getElementById('xacnhan').style.display = 'block';
+                            document.getElementsByClassName('spinner-border')[0].style.display = 'none';
+                            // change text to xac nhan thong tin
+                            document.getElementsByClassName('custom-file-label')[0].style.color = 'green';
+                            document.getElementsByClassName('custom-file-label')[0].innerHTML = 'Nếu thông tin không đúng hãy chọn ảnh khác';
+
+                        }
+                    )
+                    .catch(error => console.log(error));
+            }
+            );
+
+        </script>
+    </div>
+
+
+
+
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.0/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        // display image after upload
+        var loadFile = function (event) {
+            var image = document.getElementById('image');
+            var file = event.target.files[0];
+
+            var fileType = file.type;
+            if (fileType != 'image/jpeg' && fileType != 'image/png' && fileType != 'image/jpg') {
+                alert("Chỉ được upload file hình ảnh");
+                return;
+            }
+
+
+
+            // auto resize image to fit content image
+            var reader = new FileReader();
+
+            reader.onload = function () {
+                var dataURL = reader.result;
+                var output = new Image();
+                output.src = dataURL;
+                output.onload = function () {
+                    var canvas = document.createElement('canvas');
+                    var ctx = canvas.getContext("2d");
+                    ctx.drawImage(output, 0, 0);
+
+                    var MAX_WIDTH = 500;
+                    var MAX_HEIGHT = 550;
+                    var width = output.width;
+                    var height = output.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    var ctx = canvas.getContext("2d");
+                    ctx.drawImage(output, 0, 0, width, height);
+
+                    var dataurl = canvas.toDataURL(fileType);
+                    image.src = dataurl;
+                }
+            };
+
+            reader.readAsDataURL(file);
+
+            // //  display image in center
+
+            image.style.display = 'block';
+            image.style.marginTop = '10px';
+            image.style.marginLeft = 'auto';
+            image.style.marginRight = 'auto';
+
+
+            //  change progress bar to 33%
+            document.getElementsByClassName('progress-bar')[0].style.width = '0%';
+            document.getElementsByClassName('progress-bar')[0].innerHTML = '0%';
+
+
+            // change text of label to chon anh khac
+            document.getElementsByClassName('custom-file-label')[0].innerHTML = 'Chọn ảnh khác';
+
+            // hide xac nhan thong tin button and show submit button
+            document.getElementById('xacnhan').style.display = 'none';
+            document.getElementById('submit').style.display = 'block';
+
+        };
+
+        document.getElementById('uploadID').addEventListener('change', loadFile);
+
+        
+    </script>
+
+
+
+</body>
+
+<!-- footer -->
+<footer class="page-footer font-small blue pt-4">
+    <div class="container-fluid text-center text-md-left">
+        <div class="row">
+            <div class="col-md-6 mt-md-0 mt-3 text-center">
+                <h5 class="">eKYC Demo</h5>
+                <p>© 2023 eKYC Demo.</p>
+            </div>
+            <hr class="clearfix w-100 d-md-none pb-3">
+            <div class="col-md-6 mb-md-0 mb-3 text-center">
+                <h5 class="text-uppercase">Thông tin liên hệ</h5>
+                <p>Admin</p>
+                <p>
+                        <img src="https://img.icons8.com/fluent/48/000000/facebook-new.png" />
+                    </a>
+                        <img src="https://img.icons8.com/fluent/48/000000/instagram-new.png" />
+                    </a>
+                
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+</html>

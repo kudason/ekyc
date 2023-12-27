@@ -1,0 +1,9 @@
+pytorch
+PIL
+cv2
+matplotlib
+onnxruntime
+flask
+vietocr
+facenet_pytorch
+flask_session

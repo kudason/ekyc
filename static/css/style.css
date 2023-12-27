@@ -1,0 +1,49 @@
+.camera-wrapper,
+.canvas-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.canvas-wrapper {
+  flex-direction: column;
+  justify-content: space-between;
+  height: 560px;
+  padding: 0;
+}
+
+canvas {
+  width: 90%;
+  height: calc(33.333% - 7px);
+  margin-bottom: 10px;
+  border-radius: 5px;
+  background-color: rgb(114, 113, 113);
+}
+
+canvas:last-child {
+  margin-bottom: 0;
+}
+
+video {
+  width: 700px;
+  height: 560px;
+  border-radius: 5px;
+  background-color: rgb(80, 79, 79);
+}
+
+footer {
+  background-color: rgb(117, 116, 116);
+  margin-top: 30px;
+  bottom: 0;
+  color: white;
+}
+
+#guide {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  font-size: 16px;
+  font-weight: bold;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
